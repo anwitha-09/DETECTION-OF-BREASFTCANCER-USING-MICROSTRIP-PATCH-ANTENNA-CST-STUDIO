@@ -1,0 +1,94 @@
+#ifdef _WIN32
+#include <windows.h>
+int real_main(int argc, char *argv[]);
+int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR args, int ncmdshow) {
+    return real_main(__argc, __argv);
+}
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+
+#define MAX_LINES 100
+
+typedef struct {
+    float freq;
+    float s11_with;
+    float s11_without;
+    float s21_with;
+    float s21_without;
+} SParam;
+
+int read_data(const char *filename, SParam data[], int max_lines) {
+    FILE *fp = fopen(filename, "r");
+    if (!fp) {
+        printf("Error opening file: %s\n", filename);
+        return -1;
+    }
+
+    int count = 0;
+    char line[128];
+    fgets(line, sizeof(line), fp); // skip header
+
+    while (fgets(line, sizeof(line), fp) && count < max_lines) {
+        sscanf(line, "%f %f %f %f %f",
+               &data[count].freq,
+               &data[count].s11_with,
+               &data[count].s11_without,
+               &data[count].s21_with,
+               &data[count].s21_without);
+        count++;
+    }
+
+    fclose(fp);
+    return count;
+}
+
+int real_main(int argc, char *argv[]) {
+    SParam data[MAX_LINES];
+    int count = read_data("sparam_cst_graph_exact_output.txt", data, MAX_LINES);
+
+    if (count <= 0) {
+        printf("No data found in file.\n");
+        return 1;
+    }
+
+    int min_s11_with_idx = 0, min_s11_without_idx = 0;
+    int max_s21_with_idx = 0, max_s21_without_idx = 0;
+
+    for (int i = 1; i < count; i++) {
+        if (data[i].s11_with < data[min_s11_with_idx].s11_with)
+            min_s11_with_idx = i;
+        if (data[i].s11_without < data[min_s11_without_idx].s11_without)
+            min_s11_without_idx = i;
+        if (data[i].s21_with > data[max_s21_with_idx].s21_with)
+            max_s21_with_idx = i;
+        if (data[i].s21_without > data[max_s21_without_idx].s21_without)
+            max_s21_without_idx = i;
+    }
+
+    float freq_shift = fabs(data[min_s11_with_idx].freq - data[min_s11_without_idx].freq);
+    float s11_diff = fabs(data[min_s11_with_idx].s11_with - data[min_s11_without_idx].s11_without);
+    float s21_drop = fabs(data[max_s21_with_idx].s21_with - data[max_s21_without_idx].s21_without);
+
+    printf("\n--- S11 Resonance Analysis ---\n");
+    printf("Without Tumor: %.2f GHz | S11 = %.2f dB\n", data[min_s11_without_idx].freq, data[min_s11_without_idx].s11_without);
+    printf("With Tumor:    %.2f GHz | S11 = %.2f dB\n", data[min_s11_with_idx].freq, data[min_s11_with_idx].s11_with);
+    printf("Frequency Shift = %.2f GHz | Depth Difference = %.2f dB\n", freq_shift, s11_diff);
+
+    printf("\n--- S21 Transmission Analysis ---\n");
+    printf("Without Tumor: %.2f GHz | S21 = %.2f dB\n", data[max_s21_without_idx].freq, data[max_s21_without_idx].s21_without);
+    printf("With Tumor:    %.2f GHz | S21 = %.2f dB\n", data[max_s21_with_idx].freq, data[max_s21_with_idx].s21_with);
+    printf("S21 Difference = %.2f dB\n", s21_drop);
+
+    // RELAXED THRESHOLDS FOR DETECTION
+    if (freq_shift >= 0.5 || s11_diff >= 0.1 || s21_drop >= 0.3) {
+        printf("\nRESULT: Tumor Detected based on S11 and S21 analysis.\n");
+    } else {
+        printf("\nRESULT: No Tumor Detected.\n");
+    }
+
+    return 0;
+}
