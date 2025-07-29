@@ -1,2 +1,4 @@
-#  33 GHz Patch Antenna Design in CST Studio Suite
-This project involves the design, simulation, and analysis of a microstrip patch antenna operating at 33 GHz, built using CST Studio Suite 2024. The antenna is optimized for high-frequency applications such as 5G, satellite communication, and radar systems. Key parameters such as return loss (S11), radiation pattern, and gain were analyzed. The design ensures compact size, high directivity, and low reflection in the Ka-band frequency range.
+#  Detection of Breast Cancer Using Microstrip Patch Antenna – CST Studio Suite
+This project focuses on the design and simulation of a 33 GHz microstrip patch antenna for the non-invasive detection of breast cancer using CST Studio Suite 2024. The antenna is developed to sense changes in dielectric properties between normal and cancerous breast tissues through electromagnetic interaction.
+
+A 3-layer breast phantom (skin, fat, and tumor) is modeled to simulate realistic human tissue conditions. The simulation includes comprehensive analysis of S-parameters (S11 and S21), along with return loss, gain, and radiation pattern. These parameters help assess the antenna's ability to detect tumors based on reflection and transmission behavior. The project highlights the potential of microwave antenna-based diagnostics in biomedical imaging applications.
